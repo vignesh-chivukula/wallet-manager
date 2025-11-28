@@ -22,6 +22,7 @@ public class SplitwiseClient {
         ResponseEntity<Object> response = null;
 
             response = restTemplate.exchange(url, HttpMethod.valueOf(httpMethod.name()),entity,Object.class);
+            
 
         return response;
     }

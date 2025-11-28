@@ -14,7 +14,9 @@
 	<name>expense</name>
 	<description>Wallet Manager project backend</description>
 	<properties>
-		<java.version>8</java.version>
+		<java.version>11</java.version>
+		<maven.compiler.source>11</maven.compiler.source>
+    	<maven.compiler.target>11</maven.compiler.target>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -36,7 +38,6 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
-			<version>RELEASE</version>
 			<scope>compile</scope>
 		</dependency>
 		<dependency>
@@ -75,6 +76,15 @@
 			<artifactId>javax.persistence-api</artifactId>
 			<version>2.2</version>
 		</dependency>
+		<dependency>
+            <groupId>com.plaid</groupId>
+            <artifactId>plaid-java</artifactId>
+            <version>37.0.0</version>
+        </dependency>
+         <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
 	</dependencies>
 	
 	<packaging>jar</packaging>
@@ -84,7 +94,7 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<configuration>
-                    <mainClass>com.backend.pennyplanner.PennyPlannerApplication</mainClass>
+                    <mainClass>com.backend.pennyplanner.WalletManagerApplication</mainClass>
                 </configuration>
                 <executions>
         <execution>
@@ -94,7 +104,7 @@
             <configuration>
                 <classifier>spring-boot</classifier>
                 <mainClass>
-                  com.backend.pennyplanner.PennyPlannerApplication
+                  com.backend.pennyplanner.WalletManagerApplication
                 </mainClass>
             </configuration>
         </execution>

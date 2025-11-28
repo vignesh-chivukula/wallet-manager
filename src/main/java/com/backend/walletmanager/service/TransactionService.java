@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -20,6 +21,8 @@ import com.backend.walletmanager.entity.Transaction;
 import com.backend.walletmanager.entity.TransactionObjects;
 import com.backend.walletmanager.entity.TransactionType;
 import com.backend.walletmanager.entity.User;
+import com.backend.walletmanager.utils.PlaidTransactionHelper;
+import com.plaid.client.model.TransactionsGetResponse;
 
 @Service
 public class TransactionService {
@@ -32,6 +35,12 @@ public class TransactionService {
     
     @Autowired
     SplitwiseService splitwiseService;
+    
+    @Autowired
+    PlaidApiService plaidApiService;
+    
+    @Autowired
+    PlaidTransactionHelper plaidTransactionHelper;
 	
 	public ResponseModel<TransactionObjects> createTransaction(TransactionObjects transactionObject){
 		
@@ -46,7 +55,7 @@ public class TransactionService {
 		}
     	
     	Transaction expenseRecord = new Transaction();
-    	expenseRecord.setCategory("General");
+    	expenseRecord.setCategory(transactionObject.getTransactionCategory()== null ? "Miscellaneous":transactionObject.getTransactionCategory());
     	expenseRecord.setCost(transactionObject.getTrasactionCost());
     	expenseRecord.setDetail(transactionObject.getTransactionDetail());
     	expenseRecord.setTransactionDate(transactionObject.getTransactionDate());
@@ -181,21 +190,32 @@ public class TransactionService {
            }
            List<TransactionObjects> transactionData = new ArrayList<>();
            for(LinkedHashMap expense : expensesList){
-               TransactionObjects transactionObjects = new TransactionObjects();
-               transactionObjects.setTransactionId(BigInteger.valueOf((Long) expense.get("id")));
-               transactionObjects.setTransactionDetail((String) expense.get("description"));
-               transactionObjects.setTransactionType(TransactionType.EXPENSE);
-               final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX");
-               transactionObjects.setTransactionDate(sdf.parse((String)expense.get("date")));
-               if(!(sdf.parse((String)expense.get("date")).getYear() == currentYear)) {
-            	   continue;
-               }
-               transactionObjects.setTrasactionCost(Double.valueOf( (String)expense.get("cost")));
-               transactionObjects.setTransactionCategory((String) ((LinkedHashMap)expense.get("category")).get("name"));
-               transactionObjects.setTransactionSource("Splitwise");
-               transactionObjects.setUserId(user.getUserId());
-               transactionData.add(transactionObjects);
+        	   if(expense.get("deleted_at") == null) {
+	               TransactionObjects transactionObjects = new TransactionObjects();
+	               transactionObjects.setTransactionId(BigInteger.valueOf((Long) expense.get("id")));
+	               transactionObjects.setTransactionDetail((String) expense.get("description"));
+	               transactionObjects.setTransactionType(TransactionType.EXPENSE);
+	               final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX");
+	               transactionObjects.setTransactionDate(sdf.parse((String)expense.get("date")));
+	               if(!(sdf.parse((String)expense.get("date")).getYear() == currentYear)) {
+	            	   continue;
+	               }
+	               transactionObjects.setTrasactionCost(Double.valueOf( (String)expense.get("cost")));
+	               transactionObjects.setTransactionCategory((String) ((LinkedHashMap)expense.get("category")).get("name"));
+	               transactionObjects.setTransactionSource("Splitwise");
+	               transactionObjects.setUserId(user.getUserId());
+	               transactionData.add(transactionObjects);
+        	   }
            }
+           
+           //Load info from Plaid
+           List<TransactionsGetResponse> plaidResponse = plaidApiService.getTransactions(id);
+           List<TransactionObjects> standardResponse = plaidTransactionHelper.convertPlaidToStandardTransactions(plaidResponse, id);
+           List<TransactionObjects> filteredTransactions = standardResponse.stream()
+        		   .filter(transaction -> transaction.getTransactionDate().getYear() == currentYear)
+        		   .collect(Collectors.toList());
+           transactionData.addAll(filteredTransactions);           
+           
            List<Transaction> expenses = new ArrayList<Transaction>();
         try {
            expenses = transactionRepository.findByUserId(user.getUserId());
@@ -249,6 +269,7 @@ public class TransactionService {
            }
            List<TransactionObjects> transactionData = new ArrayList<>();
            for(LinkedHashMap expense : expensesList){
+        	   if(expense.get("deleted_at") == null) {
                TransactionObjects transactionObjects = new TransactionObjects();
                final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX");
                transactionObjects.setTransactionDate(sdf.parse((String)expense.get("date")));
@@ -266,7 +287,19 @@ public class TransactionService {
                transactionObjects.setTransactionSource("Splitwise");
                transactionObjects.setUserId(user.getUserId());
                transactionData.add(transactionObjects);
+        	   }
            }
+           
+           //Load info from Plaid
+           List<TransactionsGetResponse> plaidResponse = plaidApiService.getTransactions(id);
+           List<TransactionObjects> standardResponse = plaidTransactionHelper.convertPlaidToStandardTransactions(plaidResponse, id);
+           List<TransactionObjects> filteredTransactions = standardResponse.stream()
+           .filter(transaction -> transaction.getTransactionDate().getYear() == currentDate.getYear())
+           	.filter(transaction -> transaction.getTransactionDate().getMonth() == currentMonth)
+           	.collect(Collectors.toList());
+           transactionData.addAll(filteredTransactions); 
+           
+           
            List<Transaction> expenses = new ArrayList<>();
            try {
         	   expenses = transactionRepository.findByUserId(user.getUserId());
@@ -320,24 +353,36 @@ public class TransactionService {
         }
            List<TransactionObjects> transactionData = new ArrayList<>();
            for(LinkedHashMap expense : expensesList){
-               TransactionObjects transactionObjects = new TransactionObjects();
-               final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX");
-               transactionObjects.setTransactionDate(sdf.parse((String)expense.get("date")));
-               if((sdf.parse((String)expense.get("date")).getMonth() != (monthId-1))) {
-            	   continue;
-               }
-               if(transactionObjects.getTransactionDate().getYear() != currentDate.getYear()) {
-            	   continue;
-               }
-               transactionObjects.setTransactionId(BigInteger.valueOf((Long) expense.get("id")));
-               transactionObjects.setTransactionDetail((String) expense.get("description"));
-               transactionObjects.setTransactionType(TransactionType.EXPENSE);               
-               transactionObjects.setTrasactionCost(Double.valueOf( (String)expense.get("cost")));
-               transactionObjects.setTransactionCategory((String) ((LinkedHashMap)expense.get("category")).get("name"));
-               transactionObjects.setTransactionSource("Splitwise");
-               transactionObjects.setUserId(user.getUserId());
-               transactionData.add(transactionObjects);
+        	   if(expense.get("deleted_at") == null) {
+	               TransactionObjects transactionObjects = new TransactionObjects();
+	               final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX");
+	               transactionObjects.setTransactionDate(sdf.parse((String)expense.get("date")));
+	               if((sdf.parse((String)expense.get("date")).getMonth() != (monthId-1))) {
+	            	   continue;
+	               }
+	               if(transactionObjects.getTransactionDate().getYear() != currentDate.getYear()) {
+	            	   continue;
+	               }
+	               transactionObjects.setTransactionId(BigInteger.valueOf((Long) expense.get("id")));
+	               transactionObjects.setTransactionDetail((String) expense.get("description"));
+	               transactionObjects.setTransactionType(TransactionType.EXPENSE);               
+	               transactionObjects.setTrasactionCost(Double.valueOf( (String)expense.get("cost")));
+	               transactionObjects.setTransactionCategory((String) ((LinkedHashMap)expense.get("category")).get("name"));
+	               transactionObjects.setTransactionSource("Splitwise");
+	               transactionObjects.setUserId(user.getUserId());
+	               transactionData.add(transactionObjects);
+        	   }
            }
+           
+           //Load info from Plaid
+           List<TransactionsGetResponse> plaidResponse = plaidApiService.getTransactions(id);
+           List<TransactionObjects> standardResponse = plaidTransactionHelper.convertPlaidToStandardTransactions(plaidResponse, id);
+           List<TransactionObjects> filteredTransactions = standardResponse.stream()
+           .filter(transaction -> transaction.getTransactionDate().getYear() == currentDate.getYear())
+           	.filter(transaction -> transaction.getTransactionDate().getMonth() == (monthId-1))
+           	.collect(Collectors.toList());
+           transactionData.addAll(filteredTransactions); 
+           
            List<Transaction> expenses = new ArrayList<>();
            try {
         	   expenses = transactionRepository.findByUserId(user.getUserId());
