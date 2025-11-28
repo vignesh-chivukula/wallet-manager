@@ -1,0 +1,14 @@
+.card {
+  border-radius: 8px;
+}
+
+.card-title {
+  font-weight: 600;
+}
+
+.scroll-area {
+  max-height: 85vh;     /* modal content height */
+  overflow-y: auto;     /* enables scrolling */
+  overflow-x: hidden;
+  padding-right: 10px;  /* prevent scrollbar overlap */
+}

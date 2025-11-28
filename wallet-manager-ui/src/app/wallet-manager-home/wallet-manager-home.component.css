@@ -1,0 +1,99 @@
+.table{
+  margin-top: 40px;
+}
+
+.nav {
+  position: sticky;
+  top: 0;
+  width: 100%;
+  background-color: #3f51b5;
+  color: #fff;
+  display: flex;
+  padding: 0 16px;
+  /* align-items: center; */
+  height: 56px;
+  font: 500 20px/32px Roboto, "Helvetica Neue", sans-serif;
+}
+
+.nav-content {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  /* padding: 0 16px; */
+}
+
+.nav-right-content {
+  display: flex;
+  width: 100%;
+  align-items: right;
+  padding: 0 16px; /* Add small padding */
+}
+
+
+@import "../../../node_modules/@angular/material/prebuilt-themes/deeppurple-amber.css";
+
+.example-container {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #eee;
+}
+
+.mat-toolbar-menu{
+  display: flex;
+  padding: 0px 16px;
+}
+
+.button-disp{
+  cursor: pointer;
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+.nav-content span:last-child {
+  margin-left: auto;   /* pushes Logout to the right */
+}
+
+
+.nav {
+  position: sticky;
+  top: 0;
+  width: 100%;
+  background-color: #3f51b5;
+  color: white;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+}
+
+/* Container flex */
+.nav-content {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  position: relative;
+}
+
+/* Center title */
+.title {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-weight: 500;
+  font-size: 20px;
+}
+
+/* Push logout to the right */
+.spacer {
+  flex: 1;
+}
+
+.button-disp {
+  margin-left: auto;
+  cursor: pointer;
+}
